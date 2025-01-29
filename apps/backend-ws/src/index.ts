@@ -10,7 +10,10 @@ const io = new Server(server, { cors: { origin: "*" } });
 const user = new UserManager();
 
 io.on('connection', (socket: Socket) => {
-    user.addUser(socket.id, socket);
+    user.addUser(socket);
+    socket.on('disconnect', () => {
+        user.removeUser(socket.id);
+    })
 })
 
 app.listen(8080, () => {
