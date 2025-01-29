@@ -12,7 +12,8 @@
     "./label": "./src/components/label.tsx",
     "./toast": "./src/components/toast.tsx",
     "./toaster": "./src/components/toaster.tsx",
-    "./useToast": "./src/hooks/use-toast.ts"
+    "./useToast": "./src/hooks/use-toast.ts",
+    "./skeleton": "./src/components/skeleton.tsx"
   },
   "scripts": {
     "lint": "eslint . --max-warnings 0",
