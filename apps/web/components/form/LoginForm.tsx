@@ -11,8 +11,11 @@ import { login } from "@/actions/login";
 import { CardWrapper } from "./CardWrapper";
 import { FormError, FormSuccess } from "./form-condition";
 import { useSearchParams } from "next/navigation";
+import { useToast } from "@repo/ui/src/hooks/use-toast";
+import { CheckCircle } from "lucide-react";
 
 export const LoginForm = () => {
+    const { toast } = useToast();
     const searchParams = useSearchParams();
     const urlError = searchParams.get("error") === "OAuthAccountNotLinked" ? "Email already in use" : "";
     const [success, setSuccess] = useState<string>("");
@@ -40,9 +43,17 @@ export const LoginForm = () => {
                         setError(response.error);
                     }
                     if (response && response.success) {
+                        if (response.success === "Login Successful") {
+                            toast({
+                                title: "Success!",
+                                description: response.success,
+                                variant: "default",
+                                action: <CheckCircle className="w-5 h-5 text-green-500" />,
+                              })
+                        }
                         setSuccess(response.success);
                         setError("");
-                        form.reset();   
+                        form.reset();
                     }
                 })
                 .catch((error) => {

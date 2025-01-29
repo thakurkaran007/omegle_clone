@@ -9,7 +9,10 @@
     "./card": "./src/components/card.tsx",
     "./form": "./src/components/form.tsx",
     "./input": "./src/components/input.tsx",
-    "./label": "./src/components/label.tsx"
+    "./label": "./src/components/label.tsx",
+    "./toast": "./src/components/toast.tsx",
+    "./toaster": "./src/components/toaster.tsx",
+    "./useToast": "./src/hooks/use-toast.ts"
   },
   "scripts": {
     "lint": "eslint . --max-warnings 0",

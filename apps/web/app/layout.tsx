@@ -3,6 +3,7 @@ import { cn } from "@repo/ui/src/lib/utils";
 import "@repo/ui/src/styles/globals.css";
 import { SessionProvider } from "next-auth/react";
 import { Montserrat } from "next/font/google";
+import { Toaster } from "@repo/ui/src/components/toaster";
 
 const font = Montserrat({
   subsets: ["vietnamese"],
@@ -15,7 +16,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="en">
       <body className={cn(font.className)}>
         <SessionProvider session={session}>
-          {children}
+          <main>{children}</main>
+          <Toaster/>
         </SessionProvider>
       </body>
     </html>
