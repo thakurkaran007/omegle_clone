@@ -1,9 +1,9 @@
-import Video from "./_components/Video";
+import Room from "./_components/Room";
 
 const homePage = () => {
     return (
         <div>
-            <Video />
+            <Room />
         </div>
     )
 }
