@@ -1,33 +1,37 @@
-
-import { Socket } from "socket.io";
 import http from "http";
-
-import express from 'express';
-import { Server } from 'socket.io';
+import express from "express";
 import { UserManager } from "./manager/UserManager";
-
+import { WebSocketServer, WebSocket } from "ws";
 
 const app = express();
-const server = http.createServer(http);
+const server = http.createServer(app);
 
-const io = new Server(server, {
-  cors: {
-    origin: "http://localhost:3000",
-    methods: ["GET", "POST"]
-  }
-});
-
+const wss = new WebSocketServer({ server });
 const userManager = new UserManager();
 
-io.on('connection', (socket: Socket) => {
-  console.log('a user connected');
-  userManager.addUser("randomName", socket);
-  socket.on("disconnect", () => {
-    console.log("user disconnected");
-    userManager.removeUser(socket.id);
-  })
+wss.on("connection", function connection(ws: WebSocket) {
+  ws.on("error", console.error);
+
+  ws.on("message", function message(message) {
+    const data = JSON.parse(message.toString());
+    switch (data.type) {
+      case "add-user":
+        userManager.addUser(data.userId, ws);
+        break;
+      case 'remove-user':
+        userManager.removeUser(ws);
+        break;
+      default:
+        break;
+    }
+  });
+
+  ws.on("close", function close() {
+    console.log("Socket closed, removing user.");
+    userManager.removeUser(ws);
+  });
 });
 
 server.listen(8080, () => {
-    console.log('listening on *:3000');
+  console.log("Listening on port 8080");
 });

@@ -1,13 +1,14 @@
 import { RoomManager } from "./RoomManager";
+import { WebSocket } from "ws";
 
 export interface User {
     socket: WebSocket;
-    name: string;
+    userId: string;
 }
 
 export class UserManager {
     private users: User[];
-    private queue: WebSocket[];
+    private queue: string[];
     private roomManager: RoomManager;
     
     constructor() {
@@ -16,56 +17,60 @@ export class UserManager {
         this.roomManager = new RoomManager();
     }
 
-    addUser(name: string, socket: WebSocket) {
+    addUser(userId: string, socket: WebSocket) {
         this.users.push({
-            name, socket
+            userId, socket
         })
-        this.queue.push(socket);
-        // socket.emit("lobby");
+        this.queue.push(userId);
+        console.log("added user");
         this.clearQueue();
         this.initHandlers(socket);
     }
 
     removeUser(socket: WebSocket) {
+        const user = this.users.find(x => x.socket === socket);
         this.users = this.users.filter(x => x.socket !== socket);
-        this.queue = this.queue.filter(x => x === socket);
+        this.queue = this.queue.filter(x => x === user?.userId);
     }
 
     clearQueue() {
         console.log("inside clear queues")
         console.log(this.queue.length);
-        if (this.queue.length < 2) {
-            return;
-        }
+        if (this.queue.length < 2) return;
         const socket1 = this.queue.pop();
         const socket2 = this.queue.pop();
         console.log("id is " + socket1 + " " + socket2);
-        const user1 = this.users.find(x => x.socket === socket1);
-        const user2 = this.users.find(x => x.socket === socket2);
+        const user1 = this.users.find(x => x.userId === socket1);
+        const user2 = this.users.find(x => x.userId === socket2);
 
-        if (!user1 || !user2) {
-            return;
-        }
-        console.log("creating roonm");
+        if (!user1 || !user2) return;
+        console.log("creating room");
 
         const room = this.roomManager.createRoom(user1, user2);
         this.clearQueue();
     }
 
     initHandlers(socket: WebSocket) {
+        socket.on('message', (message) => {
+            const data = JSON.parse(message.toString());
+            switch (data.type) {
+                case 'offer':
+                    this.roomManager.onOffer(data.roomId, data.sdp, data.senderId);
+                    break;
+                case 'answer':
+                    this.roomManager.onAnswer(data.roomId, data.sdp, data.senderId);
+                    break;
+                case 'ice-candidate':
+                    this.roomManager.onIceCandidates(data.roomId, data.senderId, data.candidate);
+                    break;
+                default:
+                    break;
+            }
+        });
 
-
-        // socket.on("offer", ({sdp, roomId}: {sdp: string, roomId: string}) => {
-        //     this.roomManager.onOffer(roomId, sdp, socket);
-        // })
-
-        // socket.on("answer",({sdp, roomId}: {sdp: string, roomId: string}) => {
-        //     this.roomManager.onAnswer(roomId, sdp, socket);
-        // })
-
-        // socket.on("add-ice-candidate", ({candidate, roomId, type}) => {
-        //     this.roomManager.onIceCandidates(roomId, socket, candidate, type);
-        // });
+        socket.on('close', () => {
+            this.removeUser(socket);
+        });
     }
 
 }

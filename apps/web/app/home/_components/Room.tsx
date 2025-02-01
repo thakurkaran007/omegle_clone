@@ -1,12 +1,14 @@
 "use client";
-import { useEffect, useState } from "react";
-import io, { Socket } from "socket.io-client";
+import { useEffect, useRef, useState } from "react";
 import { VideoContainer } from "./VideoContainer";
+import { getUser } from "@/hooks/getUser";
 
 const Room = () => {
-    const [socket, setSocket] = useState<ReturnType<typeof io> | null>(null);
-    const [sendingPc, setSendingPc] = useState<RTCPeerConnection | null>(null);
-    const [receivingPc, setReceivingPc] = useState<RTCPeerConnection | null>(null);
+    const user = getUser();
+    const [socket, setSocket] = useState<WebSocket | null>(null);
+    const sendingPc = useRef<RTCPeerConnection | null>(null);
+    const receivingPc = useRef<RTCPeerConnection | null>(null);
+    const pendingCandidates = useRef<RTCIceCandidateInit[]>([]); // Store ICE candidates temporarily
     const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
     const [localStream, setLocalStream] = useState<MediaStream | null>(null);
 
@@ -25,87 +27,170 @@ const Room = () => {
     };
 
     useEffect(() => {
-        const newSocket = io("http://localhost:8080");
-        newSocket.on("connect", () => {
+        const newSocket = new WebSocket("ws://localhost:8080");
+    
+        newSocket.onopen = () => {
             console.log("Connected to server");
-        });
+            newSocket.send(
+                JSON.stringify({
+                    type: "add-user",
+                    userId: user?.id,
+                })
+            );
+        };
+    
+        newSocket.onmessage = async (event) => {
+            const data = JSON.parse(event.data.toString());
+            console.log("Data received: ", data);
+            switch (data.type) {
+                case "ice-candidate":
+                    if (sendingPc.current) {
+                        console.log("Adding ICE candidate to sendingPc");
+                        await sendingPc.current.addIceCandidate(data.candidate);
+                    } else if (receivingPc.current) {
+                        console.log("Adding ICE candidate to receivingPc");
+                        await receivingPc.current.addIceCandidate(data.candidate);
+                    } else {
+                        console.log("Peer connection not found, storing candidate.");
+                        pendingCandidates.current.push(data.candidate);
+                    }
+                    break;
+                
+                case "added-user":
+                    console.log("Added user");
+                    break;
+                case "send-offer":
+                    const pc = new RTCPeerConnection({
+                        iceServers: [
+                            {
+                                urls: [
+                                    "stun:stun.l.google.com:19302",
+                                    "stun:stun1.l.google.com:19302",
+                                    "stun:stun2.l.google.com:19302"
+                                ]
+                                
+                            },
+                        ],
+                    });
+                    sendingPc.current = pc;
+                    const stream = await getCam();
+                    if (!stream) {
+                        console.log("StreamCouldnotstart at send-offer");
+                        return;
+                    }
+                    stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+                    pc.ontrack = (event) => {
+                        setRemoteStream(event.streams[0]);
+                    };
+                    pc.onnegotiationneeded = async () => {
+                        const offer = await pc.createOffer();
+                        await pc.setLocalDescription(new RTCSessionDescription(offer));
+                        newSocket.send(
+                            JSON.stringify({
+                                type: "offer",
+                                sdp: offer,
+                                roomId: data.roomId,
+                                senderId: user?.id,
+                            })
+                        );
+                        console.log("Offer sent from: ", user?.id);
+                    };
+                    pc.onicecandidate = (event) => {
+                        if (event.candidate) {
+                            console.log("Ice candidate sent");
+                            newSocket.send(
+                                JSON.stringify({
+                                    type: "ice-candidate",
+                                    candidate: event.candidate,
+                                    roomId: data.roomId,
+                                    senderId: user?.id,
+                                })
+                            );
+                        }
+                    };
+                    break;
+                case "offer":
+                    const pc1 = new RTCPeerConnection({
+                        iceServers: [
+                            {
+                                urls: [
+                                    "stun:stun.l.google.com:19302",
+                                    "stun:stun1.l.google.com:19302",
+                                    "stun:stun2.l.google.com:19302"
+                                ]
+                                
+                            },
+                        ],
+                    });
+                    receivingPc.current = pc1;
+                    const streamOffer = await getCam();
+                    if (!streamOffer) {
+                        console.log("StreamCouldnotstart at offer");
+                        return;
+                    }
+                    streamOffer.getTracks().forEach((track) => pc1.addTrack(track, streamOffer));
+                    await pc1.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                    const answer = await pc1.createAnswer();
+                    await pc1.setLocalDescription(answer);
+                    pc1.onicecandidate = (event) => {
+                        if (event.candidate) {
+                            newSocket.send(
+                                JSON.stringify({
+                                    type: "ice-candidate",
+                                    candidate: event.candidate,
+                                    roomId: data.roomId,
+                                    senderId: user?.id,
+                                })
+                            );
+                        }
+                        console.log("Ice candidate sent");
+                    };
+                    pc1.ontrack = (event) => {
+                        setRemoteStream(event.streams[0]);
+                    };
+                    newSocket.send(
+                        JSON.stringify({
+                            type: "answer",
+                            sdp: answer.sdp,
+                            roomId: data.roomId,
+                            senderId: user?.id,
+                        })
+                    );
+                    console.log("Answer sent by: ", user?.id );
+                    break;
+                case "answer":
+                    console.log("Answer received: ",user?.id);
+                        if (sendingPc.current) await sendingPc.current.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                    break;
+                default:
+                    break;
+            }
+        };
+    
+        newSocket.onclose = () => {
+            console.log("Socket closed");
+            newSocket.send(
+                JSON.stringify({
+                    type: "remove-user",
+                    senderId: user?.id,
+                })
+            );
+        };
+    
         setSocket(newSocket);
-
-        newSocket.on("send-offer", async ({ roomId }: { roomId: string }) => {
-            console.log("Sending offer");
-            const pc = new RTCPeerConnection();
-            const stream = await getCam();
-
-            if (stream) {
-                stream.getTracks().forEach((track) => pc.addTrack(track, stream));
-            }
-            pc.ontrack = (event) => {
-                setRemoteStream(event.streams[0]);
-            }
-            pc.onnegotiationneeded = async () => {
-                const offer = await pc.createOffer();
-                await pc.setLocalDescription(offer);
-                newSocket.emit("offer", { sdp: offer.sdp, roomId, senderSocketid: newSocket.id });
-            }
-
-            pc.onicecandidate = (event) => {
-                if (event.candidate) {
-                    newSocket.emit("candidate", { candidate: event.candidate, roomId, senderSocketid: newSocket.id });
-                }
-            };
-
-            setSendingPc(pc);
-        });
-
-        newSocket.on("offer", async ({ roomId, sdp }: { roomId: string; sdp: string }) => {
-            console.log("Offer received");
-            const pc = new RTCPeerConnection();
-            const stream = await getCam();
-
-            if (stream) {
-                stream.getTracks().forEach((track) => pc.addTrack(track, stream));
-            }
-
-            await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp }));
-            const answer = await pc.createAnswer();
-            await pc.setLocalDescription(answer);
-
-            pc.onicecandidate = (event) => {
-                if (event.candidate) {
-                    newSocket.emit("candidate", { candidate: event.candidate, roomId, senderSocketid: newSocket.id });
-                }
-            };
-
-            pc.ontrack = (event) => {
-                setRemoteStream(event.streams[0]);
-            };
-
-            newSocket.emit("answer", { sdp: answer.sdp, roomId, senderSocketid: newSocket.id });
-            setReceivingPc(pc);
-        });
-
-        newSocket.on("answer", async ({ roomId, sdp }: { roomId: string; sdp: string }) => {
-            if (sendingPc) {
-                await sendingPc.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp }));
-            }
-            console.log("Answer received");
-        });
-
-        newSocket.on("candidate", async ({ candidate }: { candidate: RTCIceCandidateInit }) => {
-            if (sendingPc) {
-                await sendingPc.addIceCandidate(new RTCIceCandidate(candidate));
-            }
-            if (receivingPc) {
-                await receivingPc.addIceCandidate(new RTCIceCandidate(candidate));
-            }
-            console.log("Candidate received");
-        });
-
+    
         return () => {
-            newSocket.disconnect();
+            if (newSocket.readyState === WebSocket.OPEN) {
+                newSocket.send(
+                    JSON.stringify({
+                        type: "remove-user"
+                    })
+                );
+            }
+            newSocket.close();
         };
     }, []);
-
+    
     return (
         <div className="flex flex-col items-center justify-center h-screen">
             <VideoContainer stream={remoteStream} isLocal={false} />
