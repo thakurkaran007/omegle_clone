@@ -1,14 +1,13 @@
-import { Socket } from "socket.io";
 import { RoomManager } from "./RoomManager";
 
 export interface User {
-    socket: Socket;
+    socket: WebSocket;
     name: string;
 }
 
 export class UserManager {
     private users: User[];
-    private queue: string[];
+    private queue: WebSocket[];
     private roomManager: RoomManager;
     
     constructor() {
@@ -17,21 +16,19 @@ export class UserManager {
         this.roomManager = new RoomManager();
     }
 
-    addUser(name: string, socket: Socket) {
+    addUser(name: string, socket: WebSocket) {
         this.users.push({
             name, socket
         })
-        this.queue.push(socket.id);
-        socket.emit("lobby");
-        this.clearQueue()
+        this.queue.push(socket);
+        // socket.emit("lobby");
+        this.clearQueue();
         this.initHandlers(socket);
     }
 
-    removeUser(socketId: string) {
-        const user = this.users.find(x => x.socket.id === socketId);
-        
-        this.users = this.users.filter(x => x.socket.id !== socketId);
-        this.queue = this.queue.filter(x => x === socketId);
+    removeUser(socket: WebSocket) {
+        this.users = this.users.filter(x => x.socket !== socket);
+        this.queue = this.queue.filter(x => x === socket);
     }
 
     clearQueue() {
@@ -40,12 +37,11 @@ export class UserManager {
         if (this.queue.length < 2) {
             return;
         }
-
-        const id1 = this.queue.pop();
-        const id2 = this.queue.pop();
-        console.log("id is " + id1 + " " + id2);
-        const user1 = this.users.find(x => x.socket.id === id1);
-        const user2 = this.users.find(x => x.socket.id === id2);
+        const socket1 = this.queue.pop();
+        const socket2 = this.queue.pop();
+        console.log("id is " + socket1 + " " + socket2);
+        const user1 = this.users.find(x => x.socket === socket1);
+        const user2 = this.users.find(x => x.socket === socket2);
 
         if (!user1 || !user2) {
             return;
@@ -56,18 +52,20 @@ export class UserManager {
         this.clearQueue();
     }
 
-    initHandlers(socket: Socket) {
-        socket.on("offer", ({sdp, roomId}: {sdp: string, roomId: string}) => {
-            this.roomManager.onOffer(roomId, sdp, socket.id);
-        })
+    initHandlers(socket: WebSocket) {
 
-        socket.on("answer",({sdp, roomId}: {sdp: string, roomId: string}) => {
-            this.roomManager.onAnswer(roomId, sdp, socket.id);
-        })
 
-        socket.on("add-ice-candidate", ({candidate, roomId, type}) => {
-            this.roomManager.onIceCandidates(roomId, socket.id, candidate, type);
-        });
+        // socket.on("offer", ({sdp, roomId}: {sdp: string, roomId: string}) => {
+        //     this.roomManager.onOffer(roomId, sdp, socket);
+        // })
+
+        // socket.on("answer",({sdp, roomId}: {sdp: string, roomId: string}) => {
+        //     this.roomManager.onAnswer(roomId, sdp, socket);
+        // })
+
+        // socket.on("add-ice-candidate", ({candidate, roomId, type}) => {
+        //     this.roomManager.onIceCandidates(roomId, socket, candidate, type);
+        // });
     }
 
 }
