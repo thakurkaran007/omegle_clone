@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuItem,
 } from "@radix-ui/react-dropdown-menu"
+import { useEffect } from "react"
 
 export function AppBar() {
   const { data: session, status } = useSession();

@@ -1,10 +1,10 @@
 import Room from "./_components/Room";
 
-const homePage = () => {
+const HomePage = () => {
     return (
         <div>
-            <Room />
+            <Room/>
         </div>
     )
 }
-export default homePage;
+export default HomePage;
