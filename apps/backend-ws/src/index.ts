@@ -30,6 +30,7 @@ wss.on("connection", function connection(ws: WebSocket) {
     console.log("Socket closed, removing user.");
     userManager.removeUser(ws);
   });
+  
 });
 
 server.listen(8080, () => {

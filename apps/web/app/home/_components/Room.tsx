@@ -2,9 +2,17 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getUser } from "@/hooks/getUser";
+import { Button } from "@repo/ui/src/components/button";
+
+type Message = {
+    senderId: string;
+    message: string;
+}
 
 const Room = () => {
     const user = getUser();
+    const [disabled, setDisabled] = useState(true);
+    const [onGoinngCall, setOnGoingCall] = useState(false);
     const socketRef = useRef<WebSocket | null>(null);
     const sendingPc = useRef<RTCPeerConnection | null>(null);
     const receivingPc = useRef<RTCPeerConnection | null>(null);
@@ -13,8 +21,41 @@ const Room = () => {
     const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
     const [localStream, setLocalStream] = useState<MediaStream | null>(null);
     const SendQueue = useRef<RTCIceCandidate[]>([]);
+    const [message, setMessage] = useState("");
+    const [allMessages, setAllMessages] = useState<Message[]>([]);
     const RecieveQueue = useRef<RTCIceCandidate[]>([]);
 
+    const sendMessage = useCallback(() => {
+            if (!socketRef.current || !user) {
+                console.log(user, socketRef.current);
+                console.error("No WebSocket connection or user available");
+                return;
+            }
+            if (!message.trim()) return;
+            const newMessage: Message = { senderId: user.id ?? "", message };
+            socketRef.current.send(JSON.stringify({ type: "message", senderId: user.id, message }));
+            setAllMessages((prev) => [...prev, newMessage]);
+            setMessage("")
+    }, [socketRef.current, message]);
+
+    const New = () => {
+        if (!socketRef.current || !user) {
+            console.log(user, socketRef.current);
+            console.error("No WebSocket connection or user available");
+            return;
+        }
+        setOnGoingCall(true);
+        socketRef.current.send(JSON.stringify({ type: "new", senderId: user.id }));
+    }
+
+    const stop = () => {
+        if (!socketRef.current || !user) {
+            console.log(user, socketRef.current);
+            console.error("No WebSocket connection or user available");
+            return;
+        }
+        socketRef.current.send(JSON.stringify({ type: "stop", senderId: user}));
+    }
 
     const getCam = useCallback(async () => {
         try {
@@ -110,6 +151,7 @@ const Room = () => {
                     receivingPc.current!.ontrack = (event) => {
                         console.log("📡 Received remote stream");
                         setRemoteStream(event.streams[0]);
+                        setDisabled(false);
                     };
 
                     receivingPc.current!.onicecandidate = (event) => {
@@ -179,7 +221,9 @@ const Room = () => {
                         console.error("❌ Error adding ICE candidate:", error);
                     }
                     break;
-
+                case "message":
+                    setAllMessages((prev) => [...prev, data.message]);
+                    break;
                 default:
                     console.error("❓ Unknown message type:", data.type);
                     break;
@@ -210,10 +254,56 @@ const Room = () => {
         };
     }, []);
 
+    if (!user) return;
+
     return (
-        <div className="flex flex-col items-center justify-center h-screen">
-            <video ref={remoteRef} autoPlay playsInline muted={false} className="w-1/2 border border-gray-400 rounded"></video>
-            <video ref={localRef} autoPlay playsInline muted className="w-1/4 border border-gray-400 rounded mt-4"></video>
+        <div className="grid grid-cols-[25%_75%] h-full" >
+            
+            <div className="flex flex-col items-center justify-around h-full p-7 bg-[#f8f6f3]">
+                <video ref={remoteRef} autoPlay playsInline muted={false} className=" rounded" />
+                <video ref={localRef} autoPlay playsInline muted className=" rounded mt-4" />
+            </div>
+            <div className="h-[80vh] w-full flex flex-col relative overflow-auto p-4">
+                <div className="flex-grow space-y-3 overflow-auto">
+                    {allMessages.length > 0 && user.id ? (
+                        allMessages.map((msg, index) => (
+                            <div key={index} className={`flex ${msg.senderId === user.id ? "justify-end" : "justify-start"}`}>
+                                <div className={`px-3 py-2 rounded-lg text-sm max-w-[60%] text-white shadow-md ${msg.senderId === user.id ? "bg-blue-500" : "bg-gray-600"}`}>
+                                    <span>{msg.message}</span>
+                                </div>
+                            </div>
+                        ))
+                    ) : ( !onGoinngCall ? (
+                        <div className="text-gray-500">
+                            <div>Ready to chat with new friends worldwide? Start matching for an enjoyable and fun communication experience! 🌍</div>
+                            <div>🔥🔥🔥</div>
+                            <Button onClick={() => New()} className="w-20 p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600" >Start</Button>
+                        </div>
+                    ) : ( !disabled ? (
+                        <div className="text-gray-500">
+                            <div>Connected! Start chatting now! 🎉</div>
+                        </div>
+                    ) : (
+                        <div className="text-gray-500">
+                            <div>Waiting for the other user to connect...</div>
+                        </div>
+                    )
+                    )
+                    )}
+                </div>
+                <div className="flex items-center gap-x-2 p-2 border-t border-gray-300 bg-white rounded-md shadow-md">
+                    <Button className="flex-grow ml-2 p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600" disabled={(onGoinngCall ? disabled : false)} onClick={onGoinngCall ? stop : New}>{onGoinngCall ? "Stop" : "New"}</Button>
+                    <input 
+                        type="text" 
+                        value={message} 
+                        onChange={(e) => setMessage(e.target.value)}
+                        className="flex-1 p-2 border rounded-md outline-none text-sm" 
+                        placeholder="Type a message..."
+                        onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                    />
+                    <Button onClick={() => sendMessage()} className="ml-2 p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600" disabled={onGoinngCall ? disabled : false}>Send</Button>
+                </div>
+            </div>
         </div>
     );
 };

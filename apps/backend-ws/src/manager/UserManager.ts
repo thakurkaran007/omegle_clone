@@ -7,7 +7,7 @@ export interface User {
 }
 
 export class UserManager {
-    private users: User[];
+    public users: User[];
     private queue: string[];
     private roomManager: RoomManager;
     
@@ -21,6 +21,7 @@ export class UserManager {
         this.users.push({ userId, socket });
         this.queue.push(userId);
         console.log("Added user:", userId);
+
         this.clearQueue();
         this.initHandlers(socket);
     }
@@ -31,7 +32,9 @@ export class UserManager {
         
         this.users = this.users.filter(x => x.socket !== socket);
         this.queue = this.queue.filter(x => x !== user.userId);
-        console.log(`Removed user: ${user.userId}`);
+        this.roomManager.removeRoom(user.userId);
+
+        this.clearQueue();
     }
 
     clearQueue() {
@@ -54,6 +57,15 @@ export class UserManager {
         socket.on("message", (message) => {
             const data = JSON.parse(message.toString());
             switch (data.type) {
+                case "new": 
+                    this.addUser(data.userId, socket);
+                    break;
+                case "stop":
+                    this.removeUser(socket);
+                    break;
+                case "message":
+                    this.roomManager.onMessage(data.message, data.senderId);
+                    break;
                 case "offer":
                     this.roomManager.onOffer(data.roomId, data.sdp, data.senderId);
                     break;

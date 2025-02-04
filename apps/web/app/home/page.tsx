@@ -1,10 +1,11 @@
+"use client";
 import Room from "./_components/Room";
 
 const HomePage = () => {
+
     return (
-        <div>
-            <Room/>
-        </div>
-    )
-}
+        <Room />
+    );
+};
+
 export default HomePage;
