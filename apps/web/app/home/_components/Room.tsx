@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getUser } from "@/hooks/getUser";
 import { Button } from "@repo/ui/src/components/button";
+import { useSession } from "next-auth/react";
 
 type Message = {
     senderId: string;
@@ -10,7 +10,8 @@ type Message = {
 }
 
 const Room = () => {
-    const user = getUser();
+    const session = useSession();
+    const user = session.data?.user;
     const [disabled, setDisabled] = useState(true);
     const [onGoinngCall, setOnGoingCall] = useState(false);
     const socketRef = useRef<WebSocket | null>(null);
@@ -38,24 +39,26 @@ const Room = () => {
             setMessage("")
     }, [socketRef.current, message]);
 
-    const New = () => {
-        if (!socketRef.current || !user) {
-            console.log(user, socketRef.current);
-            console.error("No WebSocket connection or user available");
-            return;
-        }
+    const New = useCallback(() => {
+        if (!socketRef.current || !user) return;
         setOnGoingCall(true);
-        socketRef.current.send(JSON.stringify({ type: "new", senderId: user.id }));
-    }
+        socketRef.current.send(JSON.stringify({ type: "add-user", userId: user.id }));
+    }, [user, socketRef.current]);
 
-    const stop = () => {
+    const stop = useCallback(() => {
         if (!socketRef.current || !user) {
             console.log(user, socketRef.current);
             console.error("No WebSocket connection or user available");
             return;
         }
-        socketRef.current.send(JSON.stringify({ type: "stop", senderId: user}));
-    }
+        console.log("sendding to remove user");
+        socketRef.current.send(JSON.stringify({ type: "remove-user", isNew: true }));
+        setOnGoingCall(false);
+        setDisabled(true);
+        setRemoteStream(null);
+        sendingPc.current?.close();
+        receivingPc.current?.close();
+    }, [user, socketRef.current]);
 
     const getCam = useCallback(async () => {
         try {
@@ -66,24 +69,24 @@ const Room = () => {
             console.error("Failed to get camera access:", error);
             return null;
         }
-    }, []);
+    }, [user]);
 
     useEffect(() => {
         const fetchCam = async () => {
             await getCam();
         };
         fetchCam();
-    }, []);
+    }, [user]);
 
     useEffect(() => {
-        if (socketRef.current) return; // Prevent duplicate WebSocket connections
+        if (socketRef.current) return;
+        if (!user) return;
 
         const newSocket = new WebSocket("ws://localhost:8080");
         socketRef.current = newSocket;
 
         newSocket.onopen = () => {
             console.log("✅ Connected to WebSocket");
-            newSocket.send(JSON.stringify({ type: "add-user", userId: user?.id }));
         };
 
         newSocket.onclose = () => {
@@ -93,18 +96,20 @@ const Room = () => {
 
         newSocket.onmessage = async (event) => {
             const data = JSON.parse(event.data);
-            console.log("📩 Received: ", data);
 
             switch (data.type) {
+                case "user-disconnected":
+                    console.log("User disconnected");
+                    setOnGoingCall(false);
+                    setDisabled(true);
+                    setRemoteStream(null);
+                    sendingPc.current?.close();
+                    receivingPc.current?.close();
+                    newSocket.send(JSON.stringify({type: "add-user", userId: user.id}));
+                    break;
                 case "send-offer":
                     sendingPc.current = new RTCPeerConnection({
-                        iceServers: [{ urls: [
-                            "stun:stun.l.google.com:19302",
-                            "stun:stun1.l.google.com:19302",
-                            "stun:stun2.l.google.com:19302",
-                            "stun:stun3.l.google.com:19302",
-                            "stun:stun4.l.google.com:19302"
-                        ] }],
+                        iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
                     });
 
                     const stream = await getCam();
@@ -139,13 +144,7 @@ const Room = () => {
 
                 case "offer":
                     receivingPc.current = new RTCPeerConnection({
-                        iceServers: [{ urls: [
-                            "stun:stun.l.google.com:19302",
-                            "stun:stun1.l.google.com:19302",
-                            "stun:stun2.l.google.com:19302",
-                            "stun:stun3.l.google.com:19302",
-                            "stun:stun4.l.google.com:19302"
-                        ] }],
+                        iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
                     });
 
                     receivingPc.current!.ontrack = (event) => {

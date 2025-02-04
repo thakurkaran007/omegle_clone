@@ -17,20 +17,24 @@ export class RoomManager {
     getUsers(roomId: string) {
         const room = this.rooms.get(roomId);
         if (!room) return;
-
         return [room.user1, room.user2];
     }
 
-    removeRoom(userId: string) {
-        this.rooms.forEach((room, roomId) => {
-            if (room.user1.userId === userId) {
-                // room.user2.socket.send(JSON.stringify({ type: "user-disconnected" }));
+    removeRoom(userId: string, isNew: boolean) {
+        for (const [roomId, room] of this.rooms.entries()) {
+            if (room.user1.userId === userId || room.user2.userId === userId) {
+                if (isNew) {
+                    room.user1.socket.send(JSON.stringify({ type: "user-disconnected" }));
+                    room.user2.socket.send(JSON.stringify({ type: "user-disconnected" }));
+                } else {
+                    const receiver = room.user1.userId === userId ? room.user2 : room.user1;
+                    receiver.socket.send(JSON.stringify({ type: "user-disconnected" }));
+                }
                 this.rooms.delete(roomId);
-            } else if (room.user2.userId === userId) {
-                // room.user1.socket.send(JSON.stringify({ type: "user-disconnected" }));
-                this.rooms.delete(roomId);
+                console.log(`Room removed: ${roomId}`);
             }
-        });
+        }
+        return undefined;
     }
     createRoom(user1: User, user2: User) {
         const roomId = (GLOBAL_ROOM_ID++).toString();

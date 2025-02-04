@@ -21,18 +21,16 @@ export class UserManager {
         this.users.push({ userId, socket });
         this.queue.push(userId);
         console.log("Added user:", userId);
-
         this.clearQueue();
         this.initHandlers(socket);
     }
 
-    removeUser(socket: WebSocket) {
+    removeUser(socket: WebSocket, isNew: boolean = false) {
         const user = this.users.find(x => x.socket === socket);
         if (!user) return;
-        
         this.users = this.users.filter(x => x.socket !== socket);
         this.queue = this.queue.filter(x => x !== user.userId);
-        this.roomManager.removeRoom(user.userId);
+        this.roomManager.removeRoom(user.userId, isNew);
 
         this.clearQueue();
     }
@@ -57,12 +55,6 @@ export class UserManager {
         socket.on("message", (message) => {
             const data = JSON.parse(message.toString());
             switch (data.type) {
-                case "new": 
-                    this.addUser(data.userId, socket);
-                    break;
-                case "stop":
-                    this.removeUser(socket);
-                    break;
                 case "message":
                     this.roomManager.onMessage(data.message, data.senderId);
                     break;
