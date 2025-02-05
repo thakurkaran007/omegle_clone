@@ -82,7 +82,7 @@ const Room = () => {
         if (socketRef.current) return;
         if (!user) return;
 
-        const newSocket = new WebSocket("ws://localhost:8080");
+        const newSocket = new WebSocket("ws://backend1.thakurkaran.xyz");
         socketRef.current = newSocket;
 
         newSocket.onopen = () => {
