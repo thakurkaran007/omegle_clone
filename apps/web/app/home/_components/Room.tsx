@@ -39,11 +39,9 @@ const Room = () => {
 
     const iceServers = [
         {
-          urls: [
-            "relay1.expressturn.com:3478", // TURN server URL
-          ],
-          username: "efCX42IBFHXXIF7Q2D",
-          credential: "MU1hKnrOIeh4kolG",
+            urls: 'turn:openrelay.metered.ca:80',
+            username: 'openrelayproject',
+            credentials: 'openrelayproject'
         },
         {
           urls: [
