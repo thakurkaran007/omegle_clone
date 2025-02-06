@@ -39,10 +39,12 @@ const Room = () => {
 
     const iceServers = [
         {
-            urls: 'turn:openrelay.metered.ca:80',
-            username: 'openrelayproject',
-            credentials: 'openrelayproject'
-        },
+          urls: [
+            "turn:openrelay.metered.ca:80", // TURN server URL
+          ],
+          username: "openrelayproject",
+          credential: "openrelayproject",
+        },,
         {
           urls: [
             "stun:stun.l.google.com:19302", // Google STUN server
