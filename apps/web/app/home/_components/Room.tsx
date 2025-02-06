@@ -92,7 +92,7 @@ const Room = () => {
         fetchCam();
     }, [user]);
 
-    const reconnectSocket = useCallback(() => {
+    useEffect(() => {
         if (socketRef.current) return;
         if (!user) return;
 
@@ -272,11 +272,6 @@ const Room = () => {
         }
 
     }, [user]);
-
-    useEffect(() => {
-        if (!user) return;
-        reconnectSocket();
-      }, [reconnectSocket, user])
 
     useEffect(() => {
         if (localStream && localRef.current) {
