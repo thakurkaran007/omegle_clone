@@ -38,7 +38,7 @@ const Room = () => {
       }, []);
 
     const iceServers = [
-        {
+      {
         urls: "stun:stun.relay.metered.ca:80",
       },
       {
@@ -60,8 +60,8 @@ const Room = () => {
         urls: "turns:global.relay.metered.ca:443?transport=tcp",
         username: "ee7a777ef472fb64d98e6d04",
         credential: "akshQOdgYVeMRamk",
-      }
-      ];
+      },
+  ];
     
     const sendMessage = useCallback(() => {
             if (!socketRef.current || !user) {
