@@ -36,17 +36,31 @@ const Room = () => {
           }, 2000);
         }
       }, []);
+    useEffect(() => {
+        if (!socketRef.current) return;
+
+        const pingInterval = setInterval(() => {
+            if (socketRef.current?.readyState === WebSocket.OPEN) {
+                console.log("Ping");
+                socketRef.current.send(JSON.stringify({ type: "ping" }));
+            }
+        }, 3000); // Sends a ping every 3 seconds
+
+        return () => {
+            clearInterval(pingInterval); // Cleanup the interval on component unmount
+        };
+    }, []);
 
     const iceServers = [
-  {
-    urls: 'turn:54.210.210.51:3478',     // TURN server
-    username: 'testuser',                // TURN username
-    credential: 'testpass'               // TURN password
-  },
-  {
-    urls: 'stun:stun.l.google.com:19302'  // STUN server
-  }
-];
+      {
+        urls: 'turn:54.210.210.51:3478',     // TURN server
+        username: 'testuser',                // TURN username
+        credential: 'testpass'               // TURN password
+      },
+      {
+        urls: 'stun:stun.l.google.com:19302'  // STUN server
+      }
+    ];
 
     
     const sendMessage = useCallback(() => {
@@ -125,6 +139,9 @@ const Room = () => {
             const data = JSON.parse(event.data);
 
             switch (data.type) {
+                case "pong":
+                    console.log("ServerPong");
+                    break;
                 case "user-disconnected":
                     console.log("User disconnected");
                     setOnGoingCall(false);
