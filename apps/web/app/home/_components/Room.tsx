@@ -53,15 +53,29 @@ const Room = () => {
 
     const iceServers = [
       {
-        urls: 'turn:54.210.210.51:3478',     // TURN server
-        username: 'testuser',                // TURN username
-        credential: 'testpass'               // TURN password
+        urls: "stun:stun.relay.metered.ca:80",
       },
       {
-        urls: 'stun:stun.l.google.com:19302'  // STUN server
+        urls: "turn:global.relay.metered.ca:80",
+        username: "ab55bf11a7bf2ffa83e4f914",
+        credential: "tVXQGnXTFHfJ34Xm",
+      },
+      {
+        urls: "turn:global.relay.metered.ca:80?transport=tcp",
+        username: "ab55bf11a7bf2ffa83e4f914",
+        credential: "tVXQGnXTFHfJ34Xm",
+      },
+      {
+        urls: "turn:global.relay.metered.ca:443",
+        username: "ab55bf11a7bf2ffa83e4f914",
+        credential: "tVXQGnXTFHfJ34Xm",
+      },
+      {
+        urls: "turns:global.relay.metered.ca:443?transport=tcp",
+        username: "ab55bf11a7bf2ffa83e4f914",
+        credential: "tVXQGnXTFHfJ34Xm",
       }
-    ];
-
+  ];
     
     const sendMessage = useCallback(() => {
             if (!socketRef.current || !user) {
