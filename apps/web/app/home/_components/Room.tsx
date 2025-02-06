@@ -97,7 +97,7 @@ const Room = () => {
         if (!user) return;
 
         try {
-            const newSocket = new WebSocket(process.env.BACKEND_WS_URL!);
+            const newSocket = new WebSocket("wss://backend1.thakurkaran.xyz");
             socketRef.current = newSocket;
 
         newSocket.onopen = () => {
