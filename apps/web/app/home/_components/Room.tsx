@@ -63,12 +63,15 @@ const Room = () => {
             return;
         }
         console.log("sendding to remove user");
-        socketRef.current.send(JSON.stringify({ type: "remove-user", isNew: true }));
         setOnGoingCall(false);
         setDisabled(true);
         setRemoteStream(null);
         sendingPc.current?.close();
         receivingPc.current?.close();
+        sendingPc.current = null;
+        receivingPc.current = null;
+        socketRef.current.send(JSON.stringify({ type: "remove-user", isNew: true }));
+       
     }, [user, socketRef.current]);
 
     const getCam = useCallback(async () => {
@@ -89,12 +92,13 @@ const Room = () => {
         fetchCam();
     }, [user]);
 
-    useEffect(() => {
+    const reconnectSocket = useCallback(() => {
         if (socketRef.current) return;
         if (!user) return;
 
-        const newSocket = new WebSocket("wss://backend1.thakurkaran.xyz");
-        socketRef.current = newSocket;
+        try {
+            const newSocket = new WebSocket(process.env.BACKEND_WS_URL!);
+            socketRef.current = newSocket;
 
         newSocket.onopen = () => {
             console.log("✅ Connected to WebSocket");
@@ -103,6 +107,8 @@ const Room = () => {
         newSocket.onclose = () => {
             console.log("⚠️ WebSocket disconnected");
             socketRef.current = null;
+            setTimeout(() => reconnectSocket(), 1000);
+            reconnectSocket();
         };
 
         newSocket.onmessage = async (event) => {
@@ -116,11 +122,21 @@ const Room = () => {
                     setRemoteStream(null);
                     sendingPc.current?.close();
                     receivingPc.current?.close();
+                    sendingPc.current = null;
+                    receivingPc.current = null;
+                    setTimeout(() => console.log("Waiting for 2 seconds: "), 1000);
                     newSocket.send(JSON.stringify({type: "add-user", userId: user.id}));
                     break;
                 case "send-offer":
                     sendingPc.current = new RTCPeerConnection({
-                        iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+                        iceServers: [{ urls: [
+                            "stun:stun.l.google.com:19302",
+                            "stun:stun1.l.google.com:19302",
+                            "stun:stun2.l.google.com:19302",
+                            "stun:stun3.l.google.com:19302",
+                            "stun:stun4.l.google.com:19302",
+                            "stun:stun01.sipphone.com"
+                        ] }]
                     });
 
                     const stream = await getCam();
@@ -155,7 +171,14 @@ const Room = () => {
 
                 case "offer":
                     receivingPc.current = new RTCPeerConnection({
-                        iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+                        iceServers: [{ urls: [
+                            "stun:stun.l.google.com:19302",
+                            "stun:stun1.l.google.com:19302",
+                            "stun:stun2.l.google.com:19302",
+                            "stun:stun3.l.google.com:19302",
+                            "stun:stun4.l.google.com:19302",
+                            "stun:stun01.sipphone.com",
+                        ]}]
                     });
 
                     receivingPc.current!.ontrack = (event) => {
@@ -238,14 +261,22 @@ const Room = () => {
                     console.error("❓ Unknown message type:", data.type);
                     break;
             }
+            return () => {
+                console.log("🧹 Cleaning up WebSocket connection");
+                newSocket.close();
+                socketRef.current = null;
+            };
         };
+        } catch (error) {
+            console.log("Error in sokcet: ", error)
+        }
 
-        return () => {
-            console.log("🧹 Cleaning up WebSocket connection");
-            newSocket.close();
-            socketRef.current = null;
-        };
     }, [user]);
+
+    useEffect(() => {
+        if (!user) return;
+        reconnectSocket();
+      }, [reconnectSocket, user])
 
     useEffect(() => {
         if (localStream && localRef.current) {
