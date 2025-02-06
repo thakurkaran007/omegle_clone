@@ -26,6 +26,17 @@ const Room = () => {
     const [allMessages, setAllMessages] = useState<Message[]>([]);
     const RecieveQueue = useRef<RTCIceCandidate[]>([]);
 
+    useEffect(() => {
+        const hasRefreshed = sessionStorage.getItem("hasRefresh");
+    
+        if (!hasRefreshed) {
+          sessionStorage.setItem("hasRefresh", "true");
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        }
+      }, []);
+    
     const sendMessage = useCallback(() => {
             if (!socketRef.current || !user) {
                 console.log(user, socketRef.current);
