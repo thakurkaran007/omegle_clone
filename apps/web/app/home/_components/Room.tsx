@@ -158,8 +158,8 @@ const Room = () => {
                     break;
                 case "user-disconnected":
                     console.log("User disconnected");
-                    setOnGoingCall(false);
-                    setDisabled(true);
+                    setOnGoingCall(true);
+                    setDisabled(false);
                     setRemoteStream(null);
                     sendingPc.current?.close();
                     receivingPc.current?.close();
@@ -236,12 +236,6 @@ const Room = () => {
                         roomId: data.roomId,
                         senderId: user?.id
                     }));
-
-                    // Process queued ICE candidates
-                    while (RecieveQueue.current.length > 0) {
-                        console.log("Processing queued ICE candidate");
-                        await receivingPc.current!.addIceCandidate(RecieveQueue.current.shift()!);
-                    }
                     break;
 
                 case "answer":
@@ -251,6 +245,10 @@ const Room = () => {
                         while (SendQueue.current.length > 0) {
                             console.log("Applying queued ICE candidate to sendingPc");
                             await sendingPc.current.addIceCandidate(SendQueue.current.shift()!);
+                        }
+                        while (RecieveQueue.current.length > 0) {
+                            console.log("Applying queued ICE candidate to receivingPc");
+                            await receivingPc.current!.addIceCandidate(RecieveQueue.current.shift()!);
                         }
                     } else {
                         console.error("No sendingPc available to set answer");
@@ -262,21 +260,22 @@ const Room = () => {
                         const candidate = new RTCIceCandidate(data.candidate);
                         if (sendingPc.current) {
                             if (sendingPc.current.remoteDescription) {
-                                console.log("🧊 Adding ICE candidate for SendingPc");
-                                await sendingPc.current.addIceCandidate(candidate);
-                            } else {
-                                console.log("Queueing ICE candidate");
-                                SendQueue.current.push(candidate);
-                            }
-                        } else if (receivingPc.current) {
-                                if (receivingPc.current.remoteDescription) {
-                                console.log("🧊 Adding ICE candidate for ReceivingPc");
-                                await receivingPc.current.addIceCandidate(candidate);
+                                    console.log("🧊 Adding ICE candidate for SendingPc");
+                                    await sendingPc.current.addIceCandidate(candidate);
                                 } else {
-                                console.log("Queueing ICE candidate");
-                                RecieveQueue.current.push(candidate);
+                                    console.log("Queueing ICE candidate");
+                                    SendQueue.current.push(candidate);
+                                }
                             }
-                        }
+                            if (receivingPc.current) {
+                                if (receivingPc.current.remoteDescription) {
+                                    console.log("🧊 Adding ICE candidate for ReceivingPc");
+                                    await receivingPc.current.addIceCandidate(candidate);
+                                } else {
+                                    console.log("Queueing ICE candidate");
+                                    RecieveQueue.current.push(candidate);
+                                }    
+                            }
                     } catch (error) {
                         console.error("❌ Error adding ICE candidate:", error);
                     }
