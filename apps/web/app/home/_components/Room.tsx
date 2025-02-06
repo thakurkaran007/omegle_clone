@@ -107,8 +107,6 @@ const Room = () => {
         newSocket.onclose = () => {
             console.log("⚠️ WebSocket disconnected");
             socketRef.current = null;
-            setTimeout(() => reconnectSocket(), 1000);
-            reconnectSocket();
         };
 
         newSocket.onmessage = async (event) => {
