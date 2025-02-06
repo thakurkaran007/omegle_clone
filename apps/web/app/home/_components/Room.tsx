@@ -36,6 +36,21 @@ const Room = () => {
           }, 2000);
         }
       }, []);
+
+    const iceServers = [
+        {
+          urls: [
+            "relay1.expressturn.com:3478", // TURN server URL
+          ],
+          username: "efCX42IBFHXXIF7Q2D",
+          credential: "MU1hKnrOIeh4kolG",
+        },
+        {
+          urls: [
+            "stun:stun.l.google.com:19302", // Google STUN server
+          ],
+        },
+      ];
     
     const sendMessage = useCallback(() => {
             if (!socketRef.current || !user) {
@@ -127,14 +142,7 @@ const Room = () => {
                     break;
                 case "send-offer":
                     sendingPc.current = new RTCPeerConnection({
-                        iceServers: [{ urls: [
-                            "stun:stun.l.google.com:19302",
-                            "stun:stun1.l.google.com:19302",
-                            "stun:stun2.l.google.com:19302",
-                            "stun:stun3.l.google.com:19302",
-                            "stun:stun4.l.google.com:19302",
-                            "stun:stun01.sipphone.com"
-                        ] }]
+                        iceServers: iceServers
                     });
 
                     const stream = await getCam();
@@ -169,14 +177,7 @@ const Room = () => {
 
                 case "offer":
                     receivingPc.current = new RTCPeerConnection({
-                        iceServers: [{ urls: [
-                            "stun:stun.l.google.com:19302",
-                            "stun:stun1.l.google.com:19302",
-                            "stun:stun2.l.google.com:19302",
-                            "stun:stun3.l.google.com:19302",
-                            "stun:stun4.l.google.com:19302",
-                            "stun:stun01.sipphone.com",
-                        ]}]
+                        iceServers: iceServers
                     });
 
                     receivingPc.current!.ontrack = (event) => {
