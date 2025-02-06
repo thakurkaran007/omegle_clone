@@ -60,12 +60,7 @@ const Room = () => {
         urls: "turns:global.relay.metered.ca:443?transport=tcp",
         username: "ee7a777ef472fb64d98e6d04",
         credential: "akshQOdgYVeMRamk",
-      },
-        {
-          urls: [
-            "stun:stun.l.google.com:19302", // Google STUN server
-          ],
-        },
+      }
       ];
     
     const sendMessage = useCallback(() => {
