@@ -49,7 +49,7 @@ const Room = () => {
         return () => {
             clearInterval(pingInterval); // Cleanup the interval on component unmount
         };
-    }, []);
+    }, [socketRef.current]);
 
     const iceServers = [
       {
