@@ -11,6 +11,7 @@ type Message = {
 
 const Room = () => {
     const session = useSession();
+    const [denied, setDenied] = useState(false);
     const user = session.data?.user;
     const [disabled, setDisabled] = useState(true);
     const [onGoinngCall, setOnGoingCall] = useState(false);
@@ -114,17 +115,42 @@ const Room = () => {
        
     }, [user, socketRef.current]);
 
-    const getCam = useCallback(async () => {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-            setLocalStream(stream);
-            return stream;
-        } catch (error) {
-            console.error("Failed to get camera access:", error);
-            return null;
-        }
-    }, [user]);
+    const checkPermissions = async () => {
+            try {
+                const cameraPermission = await navigator.permissions.query({ name: "camera" as PermissionName });
+                const microphonePermission = await navigator.permissions.query({ name: "microphone" as PermissionName });
+                if (cameraPermission.state === "granted" && microphonePermission.state === "granted") {
+                    return true;
+                } else if (cameraPermission.state === "denied" || microphonePermission.state === "denied") {
+                    return false;
+                } else {
+                    return null;
+                }
+            } catch (error) {
+                console.error("Failed to check permissions:", error);
+                return false;
+            }
+        };
 
+        const getCam = useCallback(async () => {
+            try {
+                if (!await checkPermissions()) {
+                    setAllMessages([]);
+                    setOnGoingCall(false);
+                    setDisabled(true);
+                    setDenied(true);
+                    return;
+                }
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+                setLocalStream(stream);
+                return stream;
+            } catch (error) {
+                console.error("Failed to get camera access:", error);
+                if (localRef.current) localRef.current.style.backgroundColor = "black";
+                return null;
+            }
+        }, []);
+    
     useEffect(() => {
         const fetchCam = async () => {
             await getCam();
@@ -344,6 +370,16 @@ const Room = () => {
     }, []);
 
     if (!user) return;
+    if (denied) {
+        return (
+            <div className="flex items-center justify-center h-screen">
+                <div className="text-center">
+                    <h1 className="text-2xl font-bold">Allow Camera and Microphone Access</h1>
+                    <p className="text-gray-500">Click on the camera icon in the address bar and allow access to the camera and microphone.</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="grid grid-cols-[25%_75%] h-full" >
