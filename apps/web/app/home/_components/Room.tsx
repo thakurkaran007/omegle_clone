@@ -158,7 +158,7 @@ const Room = () => {
                     break;
                 case "user-disconnected":
                     console.log("User disconnected");
-                    setOnGoingCall(true);
+                    setOnGoingCall(false);
                     setDisabled(false);
                     setRemoteStream(null);
                     sendingPc.current?.close();
@@ -201,6 +201,24 @@ const Room = () => {
                             senderId: user?.id
                         }));
                     };
+
+                    sendingPc.current!.oniceconnectionstatechange = async () => {
+                        if (sendingPc.current!.iceConnectionState === "failed") {
+                            console.log("🛑 ICE Connection failed. Restarting ICE...");
+                            sendingPc.current!.restartIce();
+
+                            const offer = await sendingPc.current!.createOffer({ iceRestart: true });
+                            await sendingPc.current!.setLocalDescription(offer);
+
+                            newSocket.send(JSON.stringify({
+                                type: "offer",
+                                sdp: offer.sdp,
+                                roomId: data.roomId,
+                                senderId: user?.id
+                            }));
+                        }
+                    };
+                    
                     break;
 
                 case "offer":
@@ -236,6 +254,13 @@ const Room = () => {
                         roomId: data.roomId,
                         senderId: user?.id
                     }));
+
+                    receivingPc.current!.oniceconnectionstatechange = () => {
+                        if (receivingPc.current!.iceConnectionState === "failed") {
+                            stop();
+                        }
+                    };
+                    
                     break;
 
                 case "answer":
@@ -305,6 +330,8 @@ const Room = () => {
         }
         if (remoteStream && remoteRef.current) {
             remoteRef.current.srcObject = remoteStream;
+            setTimeout(() => {}, 1000);
+            setDisabled(false);
         }
     }, [localStream, remoteStream]);
 
