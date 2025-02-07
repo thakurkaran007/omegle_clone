@@ -45,12 +45,6 @@ export function AppBar() {
                 >
                   <FaEye className="text-blue-500" /> View Image
                 </DropdownMenuItem>
-                <DropdownMenuItem 
-                  className="cursor-pointer flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded-md text-gray-700"
-                  onClick={() => alert("Implement image upload functionality")}
-                >
-                  <FaUpload className="text-green-500" /> Add New Image
-                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <span className="text-sm font-medium text-gray-800">{session.user.name}</span>
