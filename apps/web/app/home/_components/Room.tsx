@@ -382,11 +382,25 @@ const Room = () => {
     }
 
     return (
-        <div className="grid grid-cols-[25%_75%] h-full" >
+        <div className="grid grid-cols-[30%_70%] h-full" >
             
-            <div className="flex flex-col items-center justify-around h-full p-7 bg-[#f8f6f3]">
-                <video ref={remoteRef} autoPlay playsInline muted={false} className=" rounded" />
-                <video ref={localRef} autoPlay playsInline muted className=" rounded mt-4" />
+            <div className="flex flex-col items-center justify-center h-full p-4 bg-[#f8f6f3]">
+                <div className="flex flex-col items-center w-full h-full gap-y-4">
+                    <video 
+                        ref={remoteRef} 
+                        autoPlay 
+                        playsInline 
+                        muted={false} 
+                        className={`rounded-lg w-full h-[45%] object-cover p-2 ${remoteStream ? "bg-[#f8f6f3]" : "bg-black"}`}
+                    />
+                    <video 
+                        ref={localRef} 
+                        autoPlay 
+                        playsInline 
+                        muted 
+                        className="rounded-lg w-full h-[45%] object-cover p-2 bg-[#f8f6f3]"
+                    />
+                </div>
             </div>
             <div className="h-[80vh] w-full flex flex-col relative overflow-auto p-4">
                 <div className="flex-grow space-y-3 overflow-auto">
