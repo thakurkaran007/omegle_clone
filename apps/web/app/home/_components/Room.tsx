@@ -385,20 +385,20 @@ const Room = () => {
         <div className="grid grid-cols-[30%_70%] h-full" >
             
             <div className="flex flex-col items-center justify-center h-full p-4 bg-[#f8f6f3]">
-                <div className="flex flex-col items-center w-full h-full gap-y-4">
+                <div className="flex flex-col items-center w-full h-full gap-y-4 mb-7">
                     <video 
                         ref={remoteRef} 
                         autoPlay 
                         playsInline 
                         muted={false} 
-                        className={`rounded-lg w-full h-[45%] object-cover p-2 ${remoteStream ? "bg-[#f8f6f3]" : "bg-black"}`}
+                        className={`rounded-xl w-full h-[45%] object-cover p-2 ${remoteStream ? "bg-[#f8f6f3]" : "bg-black"}`}
                     />
                     <video 
                         ref={localRef} 
                         autoPlay 
                         playsInline 
                         muted 
-                        className="rounded-lg w-full h-[45%] object-cover p-2 bg-[#f8f6f3]"
+                        className="rounded-xl w-full h-[45%] object-cover p-2 bg-[#f8f6f3]"
                     />
                 </div>
             </div>
