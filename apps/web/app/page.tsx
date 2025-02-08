@@ -23,7 +23,7 @@ const Home = () => {
     if (user?.name) {
       setTimeout(() => {
         router.push("/auth/login");
-      }, 2000); // Redirect after 3 seconds
+      }, 2500); // Redirect after 3 seconds
     }
   }, [user?.name, router]);
 
