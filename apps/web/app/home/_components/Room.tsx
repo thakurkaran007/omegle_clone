@@ -184,12 +184,13 @@ const Room = () => {
 
             switch (data.type) {
                 case "pong":
-                    console.log("ServerPong");
+                    console.log("Pong");
                     break;
                 case "user-disconnected":
                     console.log("User disconnected");
                     setOnGoingCall(false);
                     setDisabled(false);
+                    setAllMessages([]);
                     setRemoteStream(null);
                     sendingPc.current?.close();
                     receivingPc.current?.close();
