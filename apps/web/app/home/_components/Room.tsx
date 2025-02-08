@@ -189,15 +189,13 @@ const Room = () => {
                 case "user-disconnected":
                     console.log("User disconnected");
                     setOnGoingCall(false);
-                    setDisabled(false);
+                    setDisabled(true);
                     setAllMessages([]);
                     setRemoteStream(null);
                     sendingPc.current?.close();
                     receivingPc.current?.close();
                     sendingPc.current = null;
                     receivingPc.current = null;
-                    setTimeout(() => console.log("Waiting for 2 seconds: "), 1000);
-                    newSocket.send(JSON.stringify({type: "add-user", userId: user.id}));
                     break;
                 case "send-offer":
                     sendingPc.current = new RTCPeerConnection({
