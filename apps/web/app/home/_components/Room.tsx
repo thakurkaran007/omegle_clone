@@ -169,10 +169,14 @@ const Room = () => {
         newSocket.onopen = () => {
             console.log("✅ Connected to WebSocket");
         };
+        newSocket.onerror = () => {
+            sessionStorage.setItem("hasRefresh", "false");
+        }
 
         newSocket.onclose = () => {
             console.log("⚠️ WebSocket disconnected");
             socketRef.current = null;
+            sessionStorage.setItem("hasRefresh", "false");
         };
 
         newSocket.onmessage = async (event) => {
@@ -385,7 +389,7 @@ const Room = () => {
         <div className="grid grid-cols-[30%_70%] h-full" >
             
             <div className="flex flex-col items-center justify-center h-full p-4 bg-[#f8f6f3]">
-                <div className="flex flex-col items-center w-full h-full gap-y-4 mb-7">
+                <div className="flex flex-col items-center w-full h-full gap-y-4">
                     <video 
                         ref={remoteRef} 
                         autoPlay 
@@ -398,7 +402,7 @@ const Room = () => {
                         autoPlay 
                         playsInline 
                         muted 
-                        className="rounded-xl w-full h-[45%] object-cover p-2 bg-[#f8f6f3]"
+                        className="rounded-xl w-full h-[45%] mb-2 object-cover p-2 bg-[#f8f6f3]"
                     />
                 </div>
             </div>
