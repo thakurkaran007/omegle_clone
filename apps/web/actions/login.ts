@@ -21,21 +21,6 @@ export const login = async(values: z.infer<typeof LoginSchema>, token: string) =
     }
     const { email, password } = validation.data;
 
-    const response = await fetch(
-        "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-        {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({
-                secret: RECAPTCHA_SECRET_KEY,
-                response: token,
-            }),
-        }
-    );
-
-    const { success } = await response.json();
-    if (!success) return { error: "Captcha verification failed" };
-
     const existingUser = await getUserByEmail(email);
     if (!existingUser || !existingUser.password) {
         return { error: "Email does not exist" };
