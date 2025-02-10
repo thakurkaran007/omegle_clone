@@ -12,7 +12,6 @@ import { getVerificationTokenByEmail } from "@/data/verification-token";
 import { db } from "@repo/db/src";
 
 export const login = async(values: z.infer<typeof LoginSchema>, token: string) => {
-    const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY!;
     const validation = LoginSchema.safeParse(values);
     if (!validation.success) {
         return {
