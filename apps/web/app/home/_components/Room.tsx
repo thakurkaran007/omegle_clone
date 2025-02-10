@@ -51,7 +51,7 @@ const Room = () => {
         }, 3000); // Sends a ping every 3 seconds
 
         return () => {
-            clearInterval(pingInterval); // Cleanup the interval on component unmount
+            clearInterval(pingInterval);
         };
     }, [socketRef.current]);
 
