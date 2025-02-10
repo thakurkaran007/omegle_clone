@@ -16,7 +16,6 @@ import {
 export function AppBar() {
   const { data: session, status } = useSession();
   const router = useRouter();
-
   return (
     <header className="w-full px-6 py-4 shadow-md bg-white flex items-center justify-between">
       <h1 className="font-bold tracking-wide hover:cursor-pointer" onClick={() => router.push("/home")}>
