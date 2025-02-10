@@ -6,7 +6,7 @@ import { db } from "@repo/db/src";
 const resend = new Resend(process.env.RESEND_KEY);
 
 export const sendVerificationMail = async (email: string, token: string) => {
-    const confirmLink = `${process.env.DOMAIN}:3000/auth/new-verification?token=${token}`;
+    const confirmLink = `https://${process.env.DOMAIN}/auth/new-verification?token=${token}`;
     const htmlContent = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto;">
             <h1 style="text-align: center; color: #4CAF50;">Confirm Your Email</h1>
