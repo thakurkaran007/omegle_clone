@@ -13,9 +13,11 @@ import { FormError, FormSuccess } from "./form-condition";
 import { send } from "@/actions/send-otp";
 import { verifyOtp } from "@/actions/verify-otp";
 import { useRouter } from "next/navigation";
+import { Turnstile } from "@marsidev/react-turnstile";
 
 export const SignupForm = () => {
   const router = useRouter();
+  const [token, setToken] = useState<string>("");
   const [came, setCame] = useState<boolean>(false);
   const [verified, setVerified] = useState<boolean>(false);
   const [success, setSuccess] = useState<string>("");
@@ -43,7 +45,7 @@ export const SignupForm = () => {
         setError("Email is required");
         return;
       }
-      const res = await send(mail);
+      const res = await send(mail, token);
       if (res.error) {
         setSuccess("");
         setError(res.error.toString());
@@ -192,6 +194,10 @@ export const SignupForm = () => {
               </>
             )}
           </div>
+
+            <Turnstile siteKey="0x4AAAAAAA8QOrCuOAqYxkZk" onSuccess={(token) => {
+              setToken(token);
+            }}/>
 
           {/* Action Buttons */}
           <div>
