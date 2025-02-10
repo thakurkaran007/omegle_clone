@@ -2,9 +2,9 @@
   "name": "omegle",
   "private": true,
   "scripts": {
-    "db:generate": "cd packages/db && npx prisma generate && cd ../..",
-    "build": "cd /apps/web && npm run build",
-    "dev": "npm run dev"
+    "dev": "turbo dev",
+    "db:generate": "cd packages/db && npx prisma generate && cd ../.. && pwd",
+    "build": "cd apps/web && npm run build",
     "lint": "turbo lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
