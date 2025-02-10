@@ -3,8 +3,8 @@
   "private": true,
   "scripts": {
     "dev": "turbo dev",
-    "db:generate": "cd packages/db && npx prisma generate && cd ../.. && pwd",
-    "build": "cd apps/web && npm run build",
+    "db:generate": "cd packages/db && npx prisma generate && cd ../..",
+    "build": "npm run db:generate && cd apps/web && npm run build",
     "lint": "turbo lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
