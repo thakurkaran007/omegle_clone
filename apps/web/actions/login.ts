@@ -11,7 +11,7 @@ import bcrypt from "bcryptjs";
 import { getVerificationTokenByEmail } from "@/data/verification-token";
 import { db } from "@repo/db/src";
 
-export const login = async(values: z.infer<typeof LoginSchema>, token: string) => {
+export const login = async(values: z.infer<typeof LoginSchema>) => {
     const validation = LoginSchema.safeParse(values);
     if (!validation.success) {
         return {
