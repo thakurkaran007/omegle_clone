@@ -13,7 +13,6 @@ import { FormError, FormSuccess } from "./form-condition";
 import { useSearchParams } from "next/navigation";
 import { useToast } from "@repo/ui/src/hooks/use-toast";
 import { CheckCircle } from "lucide-react";
-import { Turnstile } from "@marsidev/react-turnstile";
 
 export const LoginForm = () => {
     const { toast } = useToast();
@@ -38,7 +37,7 @@ export const LoginForm = () => {
 
     const submit = (values: z.infer<typeof LoginSchema>) => {
         startTransition(() => {
-            login(values, token)
+            login(values)
                 .then((response) => {
                     if (response && response.error) {
                         setSuccess("");
@@ -111,7 +110,6 @@ export const LoginForm = () => {
                             )}
                         />
                     </div>
-                    <Turnstile siteKey="0x4AAAAAAA8QOrCuOAqYxkZk" onSuccess={(token) => setToken(token)}/>
                     { error && !success && <FormError message={error}/>}
                     { success && !error && <FormSuccess message={success}/>}
                     <Button type="submit" className="w-full">   
