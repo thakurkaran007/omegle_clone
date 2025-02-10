@@ -16,7 +16,6 @@ import { CheckCircle } from "lucide-react";
 
 export const LoginForm = () => {
     const { toast } = useToast();
-    const [token, setToken] = useState<string>("");
     const searchParams = useSearchParams();
     const urlError = searchParams.get("error") === "OAuthAccountNotLinked" ? "Email already in use" : "";
     const [success, setSuccess] = useState<string>("");
