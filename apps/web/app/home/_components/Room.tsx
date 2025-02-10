@@ -437,14 +437,14 @@ const Room = () => {
                     <Button className="flex-grow ml-2 p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600" disabled={(onGoinngCall ? disabled : false)} onClick={onGoinngCall ? stop : New}>{onGoinngCall ? "Stop" : "New"}</Button>
                     <input 
                         type="text"
-                        disabled={(onGoinngCall ? disabled : false)}
+                        disabled={(onGoinngCall ? disabled : true)}
                         value={message} 
                         onChange={(e) => setMessage(e.target.value)}
                         className="flex-1 p-2 border rounded-md outline-none text-sm" 
                         placeholder="Type a message..."
                         onKeyDown={(e) => e.key === "Enter" && sendMessage()}
                     />
-                    <Button onClick={() => sendMessage()} className="ml-2 p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600" disabled={(onGoinngCall ? disabled : false)}>Send</Button>
+                    <Button onClick={() => sendMessage()} className="ml-2 p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600" disabled={(onGoinngCall ? disabled : true)}>Send</Button>
                 </div>
             </div>
         </div>
