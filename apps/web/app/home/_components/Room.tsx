@@ -37,9 +37,6 @@ const Room = () => {
           }, 2000);
         }
       }, []);
-
-      
-
     useEffect(() => {
         if (!socketRef.current) return;
 
@@ -51,7 +48,7 @@ const Room = () => {
         }, 3000); // Sends a ping every 3 seconds
 
         return () => {
-            clearInterval(pingInterval);
+            clearInterval(pingInterval); // Cleanup the interval on component unmount
         };
     }, [socketRef.current]);
 
@@ -137,6 +134,13 @@ const Room = () => {
 
         const getCam = useCallback(async () => {
             try {
+                if (!await checkPermissions()) {
+                    setAllMessages([]);
+                    setOnGoingCall(false);
+                    setDisabled(true);
+                    setDenied(true);
+                    return;
+                }
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
                 setLocalStream(stream);
                 return stream;
@@ -155,21 +159,11 @@ const Room = () => {
     }, [user]);
 
     useEffect(() => {
-        if (!checkPermissions()) {
-            setAllMessages([]);
-            setOnGoingCall(false);
-            setDisabled(true);
-            setDenied(true);
-            return;
-        }
-      }, [])
-
-    useEffect(() => {
         if (socketRef.current) return;
         if (!user) return;
 
         try {
-            const newSocket = new WebSocket('wss://backend1.thakurkaran.xyz');
+            const newSocket = new WebSocket("wss://backend1.thakurkaran.xyz");
             socketRef.current = newSocket;
 
         newSocket.onopen = () => {
@@ -442,15 +436,15 @@ const Room = () => {
                 <div className="flex items-center gap-x-2 p-2 border-t border-gray-300 bg-white rounded-md shadow-md">
                     <Button className="flex-grow ml-2 p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600" disabled={(onGoinngCall ? disabled : false)} onClick={onGoinngCall ? stop : New}>{onGoinngCall ? "Stop" : "New"}</Button>
                     <input 
-                        type="text" 
-                        disabled={(onGoinngCall ? disabled : false)}
+                        type="text"
+                        disabled={(onGoinngCall ? (disabled ? false : true) : true)}
                         value={message} 
                         onChange={(e) => setMessage(e.target.value)}
                         className="flex-1 p-2 border rounded-md outline-none text-sm" 
                         placeholder="Type a message..."
                         onKeyDown={(e) => e.key === "Enter" && sendMessage()}
                     />
-                    <Button onClick={() => sendMessage()} className="ml-2 p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600" disabled={(onGoinngCall ? disabled : false)}>Send</Button>
+                    <Button onClick={() => sendMessage()} className="ml-2 p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600" disabled={(onGoinngCall ? (disabled ? false : true) : true)}>Send</Button>
                 </div>
             </div>
         </div>
