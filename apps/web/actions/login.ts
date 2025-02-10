@@ -11,7 +11,8 @@ import bcrypt from "bcryptjs";
 import { getVerificationTokenByEmail } from "@/data/verification-token";
 import { db } from "@repo/db/src";
 
-export const login = async(values: z.infer<typeof LoginSchema>) => {
+export const login = async(values: z.infer<typeof LoginSchema>, token: string) => {
+    const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY!;
     const validation = LoginSchema.safeParse(values);
     if (!validation.success) {
         return {
@@ -19,6 +20,21 @@ export const login = async(values: z.infer<typeof LoginSchema>) => {
         }
     }
     const { email, password } = validation.data;
+
+    const response = await fetch(
+        "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+                secret: RECAPTCHA_SECRET_KEY,
+                response: token,
+            }),
+        }
+    );
+
+    const { success } = await response.json();
+    if (!success) return { error: "Captcha verification failed" };
 
     const existingUser = await getUserByEmail(email);
     if (!existingUser || !existingUser.password) {
