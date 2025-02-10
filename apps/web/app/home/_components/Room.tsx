@@ -37,6 +37,9 @@ const Room = () => {
           }, 2000);
         }
       }, []);
+
+      
+
     useEffect(() => {
         if (!socketRef.current) return;
 
@@ -137,13 +140,6 @@ const Room = () => {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
                 setLocalStream(stream);
                 return stream;
-                if (!await checkPermissions()) {
-                    setAllMessages([]);
-                    setOnGoingCall(false);
-                    setDisabled(true);
-                    setDenied(true);
-                    return;
-                }
             } catch (error) {
                 console.error("Failed to get camera access:", error);
                 if (localRef.current) localRef.current.style.backgroundColor = "black";
@@ -159,11 +155,21 @@ const Room = () => {
     }, [user]);
 
     useEffect(() => {
+        if (!checkPermissions()) {
+            setAllMessages([]);
+            setOnGoingCall(false);
+            setDisabled(true);
+            setDenied(true);
+            return;
+        }
+      }, [])
+
+    useEffect(() => {
         if (socketRef.current) return;
         if (!user) return;
 
         try {
-            const newSocket = new WebSocket(process.env.BACKEND_WS_URL);
+            const newSocket = new WebSocket(process.env.BACKEND_WS_URL || '');
             socketRef.current = newSocket;
 
         newSocket.onopen = () => {
