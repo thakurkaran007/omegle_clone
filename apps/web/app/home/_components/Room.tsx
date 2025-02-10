@@ -134,6 +134,9 @@ const Room = () => {
 
         const getCam = useCallback(async () => {
             try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+                setLocalStream(stream);
+                return stream;
                 if (!await checkPermissions()) {
                     setAllMessages([]);
                     setOnGoingCall(false);
@@ -141,9 +144,6 @@ const Room = () => {
                     setDenied(true);
                     return;
                 }
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-                setLocalStream(stream);
-                return stream;
             } catch (error) {
                 console.error("Failed to get camera access:", error);
                 if (localRef.current) localRef.current.style.backgroundColor = "black";
@@ -163,7 +163,7 @@ const Room = () => {
         if (!user) return;
 
         try {
-            const newSocket = new WebSocket("wss://backend1.thakurkaran.xyz");
+            const newSocket = new WebSocket(process.env.BACKEND_WS_URL);
             socketRef.current = newSocket;
 
         newSocket.onopen = () => {
