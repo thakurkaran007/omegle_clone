@@ -28,14 +28,9 @@ const Room = () => {
     const RecieveQueue = useRef<RTCIceCandidate[]>([]);
 
     useEffect(() => {
-        const hasRefreshed = sessionStorage.getItem("hasRefresh");
-    
-        if (!hasRefreshed) {
-          sessionStorage.setItem("hasRefresh", "true");
           setTimeout(() => {
             window.location.reload();
           }, 2000);
-        }
       }, []);
     useEffect(() => {
         if (!socketRef.current) return;
