@@ -28,11 +28,6 @@ const Room = () => {
     const RecieveQueue = useRef<RTCIceCandidate[]>([]);
 
     useEffect(() => {
-          setTimeout(() => {
-            window.location.reload();
-          }, 2000);
-      }, []);
-    useEffect(() => {
         if (!socketRef.current) return;
 
         const pingInterval = setInterval(() => {
