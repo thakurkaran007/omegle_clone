@@ -48,23 +48,23 @@ const Room = () => {
       },
       {
         urls: "turn:global.relay.metered.ca:80",
-        username: "ab55bf11a7bf2ffa83e4f914",
-        credential: "tVXQGnXTFHfJ34Xm",
+        username: "a10fa71e2f9f03660b3c81d3",
+        credential: "UJ+mHj6vHj080OEj",
       },
       {
         urls: "turn:global.relay.metered.ca:80?transport=tcp",
-        username: "ab55bf11a7bf2ffa83e4f914",
-        credential: "tVXQGnXTFHfJ34Xm",
+        username: "a10fa71e2f9f03660b3c81d3",
+        credential: "UJ+mHj6vHj080OEj",
       },
       {
         urls: "turn:global.relay.metered.ca:443",
-        username: "ab55bf11a7bf2ffa83e4f914",
-        credential: "tVXQGnXTFHfJ34Xm",
+        username: "a10fa71e2f9f03660b3c81d3",
+        credential: "UJ+mHj6vHj080OEj",
       },
       {
         urls: "turns:global.relay.metered.ca:443?transport=tcp",
-        username: "ab55bf11a7bf2ffa83e4f914",
-        credential: "tVXQGnXTFHfJ34Xm",
+        username: "a10fa71e2f9f03660b3c81d3",
+        credential: "UJ+mHj6vHj080OEj",
       }
   ];
     
