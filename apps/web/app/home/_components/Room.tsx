@@ -124,6 +124,7 @@ const Room = () => {
 
         const getCam = useCallback(async () => {
             try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
                 if (!await checkPermissions()) {
                     setAllMessages([]);
                     setOnGoingCall(false);
@@ -131,7 +132,7 @@ const Room = () => {
                     setDenied(true);
                     return;
                 }
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+                
                 setLocalStream(stream);
                 return stream;
             } catch (error) {
