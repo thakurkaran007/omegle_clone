@@ -31,7 +31,7 @@ export function AppBar() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Avatar className="w-10 h-10 border border-gray-300 shadow-md rounded-full hover:cursor-pointer transition-transform hover:scale-105">
-                  <AvatarImage src={session.user.image || ""} />
+                  <AvatarImage src={session.user.image || ""} className="rounded-full"/>
                   <AvatarFallback className="flex items-center justify-center w-full h-full bg-gray-100 rounded-full">
                     <FaUser />
                   </AvatarFallback>
