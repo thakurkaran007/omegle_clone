@@ -10,9 +10,9 @@ import * as z from "zod";
 import bcrypt from "bcryptjs";
 import { getVerificationTokenByEmail } from "@/data/verification-token";
 import { db } from "@repo/db/src";
+import { validateCaptcha } from "@/lib/validateCaptcha";
 
 export const login = async(values: z.infer<typeof LoginSchema>, token: string) => {
-    const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY!;
     const validation = LoginSchema.safeParse(values);
     if (!validation.success) {
         return {
@@ -21,20 +21,11 @@ export const login = async(values: z.infer<typeof LoginSchema>, token: string) =
     }
     const { email, password } = validation.data;
 
-    const response = await fetch(
-        "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-        {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({
-                secret: RECAPTCHA_SECRET_KEY,
-                response: token,
-            }),
-        }
-    );
+    const validateCap = await validateCaptcha(token);
 
-    const { success } = await response.json();
-    if (!success) return { error: "Captcha verification failed" };
+    if (!validateCap) {
+        return { error: "Captcha Validation Failed" };
+    }
 
     const existingUser = await getUserByEmail(email);
     if (!existingUser || !existingUser.password) {
