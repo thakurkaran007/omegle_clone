@@ -33,6 +33,8 @@ export const LoginForm = () => {
     });
     
     useEffect(() => {
+        setSuccess("");
+        setError("");
         if (urlError === "Email already in use") setError(urlError);
     }, [urlError])
 
