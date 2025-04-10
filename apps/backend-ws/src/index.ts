@@ -18,6 +18,9 @@ wss.on("connection", function connection(ws: WebSocket) {
   ws.on("message", function message(message) {
     const data = JSON.parse(message.toString());
     switch (data.type) {
+      case "ping":
+        ws.send(JSON.stringify({ type: "pong" }));
+        break;
       case "add-user":
         if (!data.userId) {
           console.log("No user ID provided.");
@@ -48,4 +51,3 @@ wss.on("connection", function connection(ws: WebSocket) {
 server.listen(8080, () => {
   console.log("Listening on port 8080");
 });
-
