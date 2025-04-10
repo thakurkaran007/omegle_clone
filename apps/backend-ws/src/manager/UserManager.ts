@@ -40,6 +40,7 @@ export class UserManager {
         
         const userId1 = this.queue.pop()!;
         const userId2 = this.queue.pop()!;
+        if (userId1 === userId2) return;
         console.log(`Matching users: ${userId1} & ${userId2}`);
 
         const user1 = this.users.find(x => x.userId === userId1);
