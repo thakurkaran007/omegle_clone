@@ -19,7 +19,7 @@ export const sendVerificationMail = async (email: string, token: string) => {
     `;
 
     await resend.emails.send({
-        from: "thakurkaran0345@gmail.com",
+        from: "no-reply@thakurkaran.xyz",
         to: email,
         subject: "Confirm Your Email",
         html: htmlContent,
@@ -60,7 +60,7 @@ export const sendOtp = async (email: string) => {
     `;
 
     await resend.emails.send({
-        from: "thakurkaran0345@gmail.com",
+        from: "no-reply@thakurkaran.xyz",
         to: email,
         subject: "Your OTP Code",
         html: htmlContent,
