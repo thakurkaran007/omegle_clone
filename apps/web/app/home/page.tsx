@@ -1,10 +1,10 @@
-"use client";
+import { auth } from "@/auth";
 import Room from "./_components/Room";
 
-const HomePage = () => {
-
+const HomePage = async () => {
+    const user = await auth();
     return (
-        <Room />
+        <Room user={user} />
     );
 };
 
