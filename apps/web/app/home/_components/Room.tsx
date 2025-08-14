@@ -2,14 +2,17 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@repo/ui/src/components/button";
+import { useSession } from "next-auth/react";
 
 type Message = {
     senderId: string;
     message: string;
 }
 
-const Room = ({user}: {user: any}) => {
+const Room = () => {
+    const session = useSession();
     const [denied, setDenied] = useState(false);
+    const user = session.data?.user;
     const [disabled, setDisabled] = useState(true);
     const [onGoinngCall, setOnGoingCall] = useState(false);
     const socketRef = useRef<WebSocket | null>(null);
@@ -23,17 +26,7 @@ const Room = ({user}: {user: any}) => {
     const [message, setMessage] = useState("");
     const [allMessages, setAllMessages] = useState<Message[]>([]);
     const RecieveQueue = useRef<RTCIceCandidate[]>([]);
-    
-    useEffect(() => {
-        const hasRefreshed = sessionStorage.getItem("hasRefresh");
-    
-        if (!hasRefreshed) {
-          sessionStorage.setItem("hasRefresh", "true");
-          setTimeout(() => {
-            window.location.reload();
-          }, 2000);
-        }
-      }, []);
+
     useEffect(() => {
         if (!socketRef.current) return;
 
@@ -55,23 +48,23 @@ const Room = ({user}: {user: any}) => {
       },
       {
         urls: "turn:global.relay.metered.ca:80",
-        username: "ab55bf11a7bf2ffa83e4f914",
-        credential: "tVXQGnXTFHfJ34Xm",
+        username: "a10fa71e2f9f03660b3c81d3",
+        credential: "UJ+mHj6vHj080OEj",
       },
       {
         urls: "turn:global.relay.metered.ca:80?transport=tcp",
-        username: "ab55bf11a7bf2ffa83e4f914",
-        credential: "tVXQGnXTFHfJ34Xm",
+        username: "a10fa71e2f9f03660b3c81d3",
+        credential: "UJ+mHj6vHj080OEj",
       },
       {
         urls: "turn:global.relay.metered.ca:443",
-        username: "ab55bf11a7bf2ffa83e4f914",
-        credential: "tVXQGnXTFHfJ34Xm",
+        username: "a10fa71e2f9f03660b3c81d3",
+        credential: "UJ+mHj6vHj080OEj",
       },
       {
         urls: "turns:global.relay.metered.ca:443?transport=tcp",
-        username: "ab55bf11a7bf2ffa83e4f914",
-        credential: "tVXQGnXTFHfJ34Xm",
+        username: "a10fa71e2f9f03660b3c81d3",
+        credential: "UJ+mHj6vHj080OEj",
       }
   ];
     
@@ -131,6 +124,7 @@ const Room = ({user}: {user: any}) => {
 
         const getCam = useCallback(async () => {
             try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
                 if (!await checkPermissions()) {
                     setAllMessages([]);
                     setOnGoingCall(false);
@@ -138,7 +132,7 @@ const Room = ({user}: {user: any}) => {
                     setDenied(true);
                     return;
                 }
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+                
                 setLocalStream(stream);
                 return stream;
             } catch (error) {
@@ -153,7 +147,7 @@ const Room = ({user}: {user: any}) => {
             await getCam();
         };
         fetchCam();
-    }, [user, getCam]);
+    }, [user]);
 
     useEffect(() => {
         if (socketRef.current) return;
