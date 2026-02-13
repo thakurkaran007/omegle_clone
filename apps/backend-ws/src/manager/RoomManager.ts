@@ -9,10 +9,18 @@ interface Room {
 
 export class RoomManager {
     private rooms: Map<string, Room>;
+    private static instance: RoomManager;
 
-    constructor() {
+    private constructor() {
         this.rooms = new Map();
     }
+
+    public static getInstance(): RoomManager {
+        if (!RoomManager.instance) {
+            RoomManager.instance = new RoomManager();
+        }
+        return RoomManager.instance;
+    }   
 
     getUsers(roomId: string) {
         const room = this.rooms.get(roomId);
@@ -46,28 +54,23 @@ export class RoomManager {
         user2.socket.send(JSON.stringify({ type: "send-offer", roomId }));
     }
 
-    onOffer(roomId: string, sdp: string, senderId: string) {
+    getReceiver(roomId: string, senderId: string) {
         const room = this.rooms.get(roomId);
         if (!room) return;
-
         const receiver = room.user1.userId === senderId ? room.user2 : room.user1;
-        receiver.socket.send(JSON.stringify({ type: "offer", sdp, roomId }));
+        return receiver;
+    }
+
+    onOffer(roomId: string, sdp: string, senderId: string) {
+        this.getReceiver(roomId, senderId)?.socket.send(JSON.stringify({ type: "offer", sdp, roomId }));
     }
 
     onAnswer(roomId: string, sdp: string, senderId: string) {
-        const room = this.rooms.get(roomId);
-        if (!room) return;
-
-        const receiver = room.user1.userId === senderId ? room.user2 : room.user1;
-        receiver.socket.send(JSON.stringify({ type: "answer", sdp, roomId }));
+        this.getReceiver(roomId, senderId)?.socket.send(JSON.stringify({ type: "answer", sdp, roomId }));
     }
 
     onIceCandidates(roomId: string, senderId: string, candidate: any) {
-        const room = this.rooms.get(roomId);
-        if (!room) return;
-
-        const receiver = room.user1.userId === senderId ? room.user2 : room.user1;
-        receiver.socket.send(JSON.stringify({ type: "ice-candidate", candidate }));
+        this.getReceiver(roomId, senderId)?.socket.send(JSON.stringify({ type: "ice-candidate", candidate }));
     }
 
     onMessage( message: string, senderId: string) {
@@ -79,11 +82,9 @@ export class RoomManager {
             }
         });
         if (!roomId) return;
-        const room = this.rooms.get(roomId);
-        if (!room) return;
 
-        const receiver = room.user1.userId === senderId ? room.user2 : room.user1;
-        console.log("Sending message to:", receiver.userId);
-        receiver.socket.send(JSON.stringify({ type: "message", message: { message, senderId  } }));
+        
+        console.log("Sending message to:", this.getReceiver(roomId, senderId)?.userId);
+        this.getReceiver(roomId, senderId)?.socket.send(JSON.stringify({ type: "message", message: { message, senderId  } }));
     }
 }
