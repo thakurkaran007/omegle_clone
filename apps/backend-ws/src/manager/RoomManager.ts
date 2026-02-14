@@ -1,10 +1,11 @@
+import { RedisManager } from "./RedisManager";
 import { User } from "./UserManager";
 
 let GLOBAL_ROOM_ID = 1;
 
 interface Room {
-    user1: User;
-    user2: User;
+    user1: string;
+    user2: string;
 }
 
 export class RoomManager {
@@ -30,13 +31,13 @@ export class RoomManager {
 
     removeRoom(userId: string, isNew: boolean) {
         for (const [roomId, room] of this.rooms.entries()) {
-            if (room.user1.userId === userId || room.user2.userId === userId) {
+            if (room.user1 === userId || room.user2 === userId) {
                 if (isNew) {
-                    room.user1.socket.send(JSON.stringify({ type: "user-disconnected" }));
-                    room.user2.socket.send(JSON.stringify({ type: "user-disconnected" }));
+                    RedisManager.getInstance().publish("user", JSON.stringify({ type: "user-disconnected", roomId, userId: room.user1 }));
+                    RedisManager.getInstance().publish("user", JSON.stringify({ type: "user-disconnected", roomId, userId: room.user2 }));
                 } else {
-                    const receiver = room.user1.userId === userId ? room.user2 : room.user1;
-                    receiver.socket.send(JSON.stringify({ type: "user-disconnected" }));
+                    const receiver = room.user1 === userId ? room.user2 : room.user1;
+                    RedisManager.getInstance().publish("user", JSON.stringify({ type: "user-disconnected", roomId, userId: receiver }));
                 }
                 this.rooms.delete(roomId);
                 console.log(`Room removed: ${roomId}`);
@@ -44,47 +45,38 @@ export class RoomManager {
         }
         return undefined;
     }
-    createRoom(user1: User, user2: User) {
-        const roomId = (GLOBAL_ROOM_ID++).toString();
-        this.rooms.set(roomId, { user1, user2 });
-
-        console.log(`Room created: ${roomId} between ${user1.userId} & ${user2.userId}`);
-
-        user1.socket.send(JSON.stringify({ type: "send-offer", roomId }));
-        user2.socket.send(JSON.stringify({ type: "send-offer", roomId }));
+    
+    createRoom(roomId: string, user1: User, user2: User) {
+        this.rooms.set(roomId, { user1: user1.userId, user2: user2.userId });
     }
 
     getReceiver(roomId: string, senderId: string) {
         const room = this.rooms.get(roomId);
         if (!room) return;
-        const receiver = room.user1.userId === senderId ? room.user2 : room.user1;
+        const receiver = room.user1 === senderId ? room.user2 : room.user1;
         return receiver;
     }
 
     onOffer(roomId: string, sdp: string, senderId: string) {
-        this.getReceiver(roomId, senderId)?.socket.send(JSON.stringify({ type: "offer", sdp, roomId }));
+        const receiver = this.getReceiver(roomId, senderId);
+        if (!receiver) return;
+        RedisManager.getInstance().publish("user", JSON.stringify({ roomId, userId: receiver, payload: { type: "offer", sdp, roomId } }));
     }
 
     onAnswer(roomId: string, sdp: string, senderId: string) {
-        this.getReceiver(roomId, senderId)?.socket.send(JSON.stringify({ type: "answer", sdp, roomId }));
+        const receiver = this.getReceiver(roomId, senderId);
+        if (!receiver) return;
+        RedisManager.getInstance().publish("user", JSON.stringify({ roomId, userId: receiver, payload: { type: "answer", sdp, roomId } }));
     }
 
     onIceCandidates(roomId: string, senderId: string, candidate: any) {
-        this.getReceiver(roomId, senderId)?.socket.send(JSON.stringify({ type: "ice-candidate", candidate }));
+        const receiver = this.getReceiver(roomId, senderId);
+        RedisManager.getInstance().publish("user", JSON.stringify({ roomId, userId: receiver, payload: { type: "ice-candidate", candidate, roomId } }));
     }
 
-    onMessage( message: string, senderId: string) {
-        console.log("Message received:", message, senderId);
-        let roomId: string | undefined;
-        this.rooms.forEach((room, id) => {
-            if (room.user1.userId === senderId || room.user2.userId === senderId) {
-                roomId = id;
-            }
-        });
-        if (!roomId) return;
+    onMessage( message: string, senderId: string, roomId: string) {
+        const receiver = this.getReceiver(roomId, senderId);
+        RedisManager.getInstance().publish("user", JSON.stringify({ roomId, userId: receiver, payload: { type: "message", message, senderId } }));
 
-        
-        console.log("Sending message to:", this.getReceiver(roomId, senderId)?.userId);
-        this.getReceiver(roomId, senderId)?.socket.send(JSON.stringify({ type: "message", message: { message, senderId  } }));
     }
 }

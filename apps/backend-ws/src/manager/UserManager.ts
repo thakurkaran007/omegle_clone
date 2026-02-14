@@ -8,49 +8,40 @@ export interface User {
 }
 
 export class UserManager {
-    public users: User[];
+    public users: User[] = [];
     
     constructor() {
-        this.users = [];
+    RedisManager.getInstance().subscribe("match_maker", this.matchMaker.bind(this));
+    RedisManager.getInstance().subscribe("user", this.onMessage.bind(this));
     }
 
-    async addUser(userId: string, socket: WebSocket) {
-        this.users.push({ userId, socket });
-        const redis = RedisManager.getInstance().client;
 
-        await redis.lpush("waiting_users", userId);
-        this.clearQueue();
-        this.initHandlers(socket);
+    public matchMaker(message: string) {
+        const { roomId, users } = JSON.parse(message);
+
+        RoomManager.getInstance().createRoom(roomId, users[0], users[1]);
+
+        const payload = {
+            type: "send-offer",
+            roomId
+        };
+
+        RedisManager.getInstance().publish("user", JSON.stringify({ roomId, userId: users[0], payload }));
+        RedisManager.getInstance().publish("user", JSON.stringify({ roomId, userId: users[1], payload }));
     }
 
-    removeUser(socket: WebSocket, isNew: boolean = false) {
-        const user = this.users.find(x => x.socket === socket);
-        if (!user) return;
-        this.users = this.users.filter(x => x.socket !== socket);
-        RoomManager.getInstance().removeRoom(user.userId, isNew);
+    public onMessage(message: string) {
+        const { userId: senderId } = JSON.parse(message);
 
-        this.clearQueue();
-    }
-
-    async clearQueue() {
-        const redis = RedisManager.getInstance().client;
-        const userId1 = await redis.lpop("waiting_users");
-        const userId2 = await redis.lpop("waiting_users");
-
-        if (!userId1 || !userId2 || userId1 === userId2)  {
-            if (userId1) redis.lpush("waiting_users", userId1);
+        if (!this.users.find(x => x.userId === senderId)) {
+            console.log("User not found:", senderId);
             return;
         }
 
-        console.log(`Matching users: ${userId1} & ${userId2}`);
+        const user = this.users.find(x => x.userId === senderId);
+        if (!user) return;
 
-        const user1 = this.users.find(x => x.userId === userId1);
-        const user2 = this.users.find(x => x.userId === userId2);
-
-        if (!user1 || !user2) return;
-        RoomManager.getInstance().createRoom(user1, user2);
-
-        this.clearQueue();
+        user.socket.send(JSON.stringify(message));
     }
 
     initHandlers(socket: WebSocket) {
@@ -58,7 +49,7 @@ export class UserManager {
             const data = JSON.parse(message.toString());
             switch (data.type) {
                 case "message":
-                    RoomManager.getInstance().onMessage(data.message, data.senderId);
+                    RoomManager.getInstance().onMessage(data.message, data.senderId, data.roomId);
                     break;
                 case "offer":
                     RoomManager.getInstance().onOffer(data.roomId, data.sdp, data.senderId);
@@ -75,4 +66,19 @@ export class UserManager {
             this.removeUser(socket);
         });
     }
+
+    async addUser(userId: string, socket: WebSocket) {
+        this.users.push({ userId, socket });
+        const redis = RedisManager.getInstance().client;
+        await redis.lpush("waiting_users", userId);
+        this.initHandlers(socket);
+    }
+
+    removeUser(socket: WebSocket, isNew: boolean = false) {
+        const user = this.users.find(x => x.socket === socket);
+        if (!user) return;
+        this.users = this.users.filter(x => x.socket !== socket);
+        RoomManager.getInstance().removeRoom(user.userId, isNew);
+    }
+
 }
